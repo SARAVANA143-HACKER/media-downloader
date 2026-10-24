@@ -6,7 +6,6 @@ from flask_cors import CORS
 import yt_dlp
 import static_ffmpeg
 
-# Cloud-la FFmpeg automatic setup
 static_ffmpeg.add_paths()
 
 app = Flask(__name__)
@@ -15,20 +14,20 @@ CORS(app)
 DOWNLOAD_FOLDER = "downloads"
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
-# Shorts URL-ah standard YouTube video link-ah convert panrom
 def clean_url(url):
     shorts_match = re.search(r'youtube\.com/shorts/([a-zA-Z0-9_-]+)', url)
     if shorts_match:
         return f"https://www.youtube.com/watch?v={shorts_match.group(1)}"
     return url
 
-# YouTube Cloud Bot Bypass Settings
+# 100% Cloud Datacenter Bot Bypass (Skips Webpage check)
 COMMON_OPTS = {
     'quiet': True,
     'no_warnings': True,
     'extractor_args': {
         'youtube': {
-            'player_client': ['ios', 'android', 'mweb']
+            'player_client': ['android', 'ios'],
+            'player_skip': ['webpage', 'configs']
         }
     }
 }
@@ -37,7 +36,6 @@ COMMON_OPTS = {
 def home():
     return "Server is Active & Ready!"
 
-# 1. Video Info API
 @app.route('/get-info', methods=['POST'])
 def get_info():
     data = request.get_json()
@@ -65,7 +63,6 @@ def get_info():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# 2. File Download API
 @app.route('/download', methods=['GET'])
 def download():
     raw_url = request.args.get('url')
@@ -76,7 +73,6 @@ def download():
 
     url = clean_url(raw_url)
 
-    # Clean old downloads
     for f in glob.glob(os.path.join(DOWNLOAD_FOLDER, "*")):
         try:
             os.remove(f)
