@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Download - Created by Saravana V</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    /* Premium Background Image with Dark Overlay */
+    body {
+      background: linear-gradient(rgba(10, 15, 29, 0.82), rgba(10, 15, 29, 0.88)), 
+                  url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1920&auto=format&fit=crop');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+    }
+
+    /* Face Zoom & Clarity */
+    .profile-photo {
+      object-fit: cover;
+      object-position: center 18%;
+    }
+  </style>
+</head>
+<body class="text-white min-h-screen flex flex-col items-center justify-between p-4 sm:p-6">
+
+  <!-- TOP HEADER (Top-Right-la Unga Profile & Name) -->
+  <header class="w-full max-w-4xl flex justify-between items-center mb-6">
+    <!-- Logo / Brand -->
+    <div class="flex items-center gap-3 bg-slate-900/60 border border-slate-700/60 px-4 py-2 rounded-2xl backdrop-blur-md shadow-lg">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-red-500 to-pink-500 flex items-center justify-center shadow-md">
+        <i class="fa-solid fa-cloud-arrow-down text-white text-base"></i>
+      </div>
+      <span class="font-extrabold text-lg tracking-wider text-white">MediaHub</span>
+    </div>
+
+    <!-- Top-Right: Saravana V Profile Badge -->
+    <div class="flex items-center gap-3 bg-slate-900/75 border border-slate-700/70 pl-4 pr-1.5 py-1.5 rounded-full shadow-2xl backdrop-blur-xl hover:border-pink-500/60 transition duration-300">
+      <div class="text-right">
+        <span class="block text-[10px] uppercase tracking-wider text-pink-400 font-extrabold">Created by</span>
+        <h2 class="text-sm sm:text-base font-bold text-white flex items-center justify-end gap-1">
+          Saravana V 
+          <i class="fa-solid fa-circle-check text-blue-400 text-xs" title="Verified Creator"></i>
+        </h2>
+      </div>
+      <!-- Clear Face Photo -->
+      <img 
+        src="saravana.jpg" 
+        alt="Saravana V" 
+        class="profile-photo w-12 h-12 sm:w-13 sm:h-13 rounded-full border-2 border-pink-500 shadow-md ring-2 ring-pink-500/30"
+        onerror="this.src='https://ui-avatars.com/api/?name=Saravana+V&background=ec4899&color=fff'"
+      />
+    </div>
+  </header>
+
+  <!-- MAIN DOWNLOAD CARD (Glassmorphism Effect) -->
+  <div class="max-w-xl w-full bg-slate-900/75 rounded-3xl shadow-2xl p-6 sm:p-8 border border-slate-700/60 backdrop-blur-xl my-auto">
+    
+    <!-- Title -->
+    <div class="text-center mb-6">
+      <h1 class="text-3xl sm:text-4xl font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-pink-500 to-purple-500">
+        Media Downloader
+      </h1>
+      <p class="text-slate-300 text-sm mt-2">
+        Download <span class="text-green-400 font-semibold">MP4 Video</span> or 
+        <span class="text-purple-400 font-semibold">MP3 Song</span> easily
+      </p>
+    </div>
+
+    <!-- Input Section -->
+    <div class="flex flex-col gap-3">
+      <div class="relative">
+        <input 
+          type="url" 
+          id="videoUrl" 
+          placeholder="Paste URL here (YouTube / Instagram)..." 
+          class="w-full px-4 py-3.5 bg-slate-950/70 border border-slate-700 rounded-xl focus:outline-none focus:border-pink-500 text-sm pr-12 transition placeholder-slate-400 text-white"
+        />
+        <button onclick="pasteFromClipboard()" title="Paste" class="absolute right-3 top-3 text-slate-400 hover:text-white transition">
+          <i class="fa-regular fa-clipboard text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Action Button -->
+      <button 
+        onclick="fetchVideoDetails()" 
+        id="fetchBtn"
+        class="w-full bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 font-semibold py-3.5 rounded-xl shadow-lg shadow-pink-500/20 transition duration-200 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-magnifying-glass"></i> Fetch Video / Audio
+      </button>
+    </div>
+
+    <!-- Status Message -->
+    <div id="statusMsg" class="hidden mt-4 p-3 rounded-lg text-sm text-center"></div>
+
+    <!-- Result Card -->
+    <div id="resultCard" class="hidden mt-6 bg-slate-950/80 border border-slate-700 rounded-2xl p-4 backdrop-blur-md">
+      <div class="flex flex-col sm:flex-row gap-4 items-center">
+        <img id="thumbImg" src="" alt="Thumbnail" class="w-full sm:w-36 h-24 object-cover rounded-xl border border-slate-700 bg-slate-800">
+        <div class="flex-1 w-full text-center sm:text-left">
+          <h3 id="videoTitle" class="font-medium text-sm text-slate-200 line-clamp-2">Loading...</h3>
+          <span id="platformBadge" class="inline-block mt-2 px-2.5 py-0.5 text-xs font-semibold rounded-full bg-slate-800 text-slate-300 border border-slate-600"></span>
+        </div>
+      </div>
+      
+      <!-- Dual Download Buttons (MP4 & MP3) -->
+      <div class="mt-4 flex flex-col sm:flex-row gap-3">
+        <button 
+          onclick="triggerDownload('mp4')" 
+          class="flex-1 bg-green-600 hover:bg-green-700 py-2.5 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 shadow-lg shadow-green-600/20">
+          <i class="fa-solid fa-video"></i> Download MP4 (Video)
+        </button>
+        <button 
+          onclick="triggerDownload('mp3')" 
+          class="flex-1 bg-purple-600 hover:bg-purple-700 py-2.5 rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 shadow-lg shadow-purple-600/20">
+          <i class="fa-solid fa-music"></i> Download MP3 (Audio)
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Footer -->
+  <footer class="mt-6 text-xs text-slate-400 text-center bg-slate-900/60 border border-slate-800/80 px-4 py-1.5 rounded-full backdrop-blur-md">
+    YouTube & Instagram Downloader • Developed by <span class="text-pink-400 font-semibold">Saravana V</span>
+  </footer>
+
+  <script>
+    let currentVideoUrl = "";
+
+    async function pasteFromClipboard() {
+      try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('videoUrl').value = text;
+      } catch (err) {
+        alert("Clipboard permission thevai!");
+      }
+    }
+
+    async function fetchVideoDetails() {
+      const urlInput = document.getElementById('videoUrl').value.trim();
+      const statusMsg = document.getElementById('statusMsg');
+      const resultCard = document.getElementById('resultCard');
+      const btn = document.getElementById('fetchBtn');
+
+      statusMsg.classList.add('hidden');
+      resultCard.classList.add('hidden');
+
+      if (!urlInput) {
+        showMessage("Please oru link paste pannunga!", "error");
+        return;
+      }
+
+      currentVideoUrl = urlInput;
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Fetching Details...`;
+      showMessage("Details eduthuttu irukku, wait pannunga...", "info");
+
+      try {
+        const res = await fetch('http://127.0.0.1:5000/get-info', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: urlInput })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          document.getElementById('thumbImg').src = data.thumbnail || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400";
+          document.getElementById('videoTitle').innerText = data.title;
+          document.getElementById('platformBadge').innerText = urlInput.includes('instagram') ? 'Instagram' : 'YouTube';
+          
+          statusMsg.classList.add('hidden');
+          resultCard.classList.remove('hidden');
+        } else {
+          showMessage("Error: " + (data.error || "Video info edukka mudiyala"), "error");
+        }
+      } catch (err) {
+        showMessage("Python server connect aagala! 'app.py' run aagutha nu check pannunga.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i> Fetch Video / Audio`;
+      }
+    }
+
+    function triggerDownload(type) {
+      if (!currentVideoUrl) return;
+      showMessage(`${type.toUpperCase()} download start aagudhu, wait pannunga...`, "info");
+      window.location.href = `http://127.0.0.1:5000/download?url=${encodeURIComponent(currentVideoUrl)}&type=${type}`;
+    }
+
+    function showMessage(msg, type) {
+      const statusMsg = document.getElementById('statusMsg');
+      statusMsg.innerText = msg;
+      statusMsg.className = `mt-4 p-3 rounded-lg text-sm text-center ${
+        type === 'error' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+      }`;
+      statusMsg.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
