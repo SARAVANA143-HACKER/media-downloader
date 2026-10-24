@@ -6,6 +6,7 @@ from flask_cors import CORS
 import yt_dlp
 import static_ffmpeg
 
+# Automatic FFmpeg & FFprobe Setup
 static_ffmpeg.add_paths()
 
 app = Flask(__name__)
@@ -20,22 +21,16 @@ def clean_url(url):
         return f"https://www.youtube.com/watch?v={shorts_match.group(1)}"
     return url
 
-# 100% Cloud Datacenter Bot Bypass (Skips Webpage check)
 COMMON_OPTS = {
     'quiet': True,
     'no_warnings': True,
-    'extractor_args': {
-        'youtube': {
-            'player_client': ['android', 'ios'],
-            'player_skip': ['webpage', 'configs']
-        }
-    }
 }
 
 @app.route('/')
 def home():
-    return "Server is Active & Ready!"
+    return "Server is Active & Working 100%!"
 
+# 1. Video Info API
 @app.route('/get-info', methods=['POST'])
 def get_info():
     data = request.get_json()
@@ -56,13 +51,14 @@ def get_info():
             info = ydl.extract_info(url, download=False)
             return jsonify({
                 'success': True,
-                'title': info.get('title', 'Media'),
+                'title': info.get('title', 'Media Video'),
                 'thumbnail': info.get('thumbnail', '')
             })
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+# 2. File Download API (With Guaranteed Audio & Sound)
 @app.route('/download', methods=['GET'])
 def download():
     raw_url = request.args.get('url')
@@ -73,6 +69,7 @@ def download():
 
     url = clean_url(raw_url)
 
+    # Pazhaya files clean panrom
     for f in glob.glob(os.path.join(DOWNLOAD_FOLDER, "*")):
         try:
             os.remove(f)
@@ -82,6 +79,7 @@ def download():
     out_template = os.path.join(DOWNLOAD_FOLDER, "%(title).40s.%(ext)s")
 
     if download_type == 'mp3':
+        # Fast MP3 Audio Download
         ydl_opts = {
             **COMMON_OPTS,
             'format': 'bestaudio/best',
@@ -89,13 +87,15 @@ def download():
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
-                'preferredquality': '128',
+                'preferredquality': '192',
             }],
         }
     else:
+        # Guaranteed Video + Full Sound MP4 (Merging with Audio)
         ydl_opts = {
             **COMMON_OPTS,
-            'format': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best',
+            'format': 'best[ext=mp4]/bestvideo+bestaudio/best',
+            'merge_output_format': 'mp4',
             'outtmpl': out_template,
         }
 
@@ -105,7 +105,8 @@ def download():
 
         downloaded_files = glob.glob(os.path.join(DOWNLOAD_FOLDER, "*"))
         if downloaded_files:
-            filename = downloaded_files[0]
+            # Sariyaana file-ah pick panrom
+            filename = max(downloaded_files, key=os.path.getctime)
             return send_file(filename, as_attachment=True)
         else:
             return "File processing error", 500
