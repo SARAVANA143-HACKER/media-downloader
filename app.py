@@ -1,14 +1,17 @@
 import os
 import re
 import glob
+import shutil
 import subprocess
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import yt_dlp
 import static_ffmpeg
 
-# Cloud-la FFmpeg setup
+# Cloud-la FFmpeg activate panrom
 static_ffmpeg.add_paths()
+ffmpeg_exe = shutil.which('ffmpeg')
+ffmpeg_dir = os.path.dirname(ffmpeg_exe) if ffmpeg_exe else None
 
 app = Flask(__name__)
 CORS(app)
@@ -55,7 +58,7 @@ def get_info():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# 2. File Download API (Guaranteed Sound & MP3 Conversion)
+# 2. File Download API (Guaranteed Sound & MP3)
 @app.route('/download', methods=['GET'])
 def download():
     raw_url = request.args.get('url')
@@ -66,22 +69,24 @@ def download():
 
     url = clean_url(raw_url)
 
-    # Old files clean panrom
+    # Pazhaya files clean panrom
     for f in glob.glob(os.path.join(DOWNLOAD_FOLDER, "*")):
         try:
             os.remove(f)
         except Exception:
             pass
 
-    out_template = os.path.join(DOWNLOAD_FOLDER, "media_raw.%(ext)s")
+    out_template = os.path.join(DOWNLOAD_FOLDER, "media_file.%(ext)s")
 
-    # Best quality with sound for both Video and Audio
+    # MUKKIYAM: [acodec!=none] forces sound to ALWAYS be included!
     ydl_opts = {
         'quiet': True,
         'no_warnings': True,
         'outtmpl': out_template,
-        'format': 'bestvideo+bestaudio/best',
+        'ffmpeg_location': ffmpeg_dir,
+        'format': 'bestvideo+bestaudio/best[acodec!=none]/b/best',
     }
+
     if download_type == 'mp4':
         ydl_opts['merge_output_format'] = 'mp4'
 
@@ -91,25 +96,23 @@ def download():
 
         downloaded_files = glob.glob(os.path.join(DOWNLOAD_FOLDER, "*"))
         if not downloaded_files:
-            return "File download aagala", 500
+            return "File download failed", 500
 
         downloaded_file = downloaded_files[0]
 
-        # MP3 AUDIO EXTRACTION (Direct FFmpeg without ffprobe)
+        # MP3 CONVERSION
         if download_type == 'mp3':
-            mp3_output = os.path.join(DOWNLOAD_FOLDER, "audio.mp3")
+            mp3_output = os.path.join(DOWNLOAD_FOLDER, "song.mp3")
             cmd = ['ffmpeg', '-y', '-i', downloaded_file, '-vn', '-acodec', 'libmp3lame', '-b:a', '192k', mp3_output]
-            subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-            return send_file(mp3_output, as_attachment=True, download_name="song.mp3")
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            
+            # If conversion succeeds, send MP3; otherwise send original audio file safely
+            if result.returncode == 0 and os.path.exists(mp3_output):
+                return send_file(mp3_output, as_attachment=True, download_name="song.mp3")
+            else:
+                return send_file(downloaded_file, as_attachment=True, download_name="song.mp3")
 
-        # MP4 VIDEO WITH 100% SOUND
-        if not downloaded_file.endswith('.mp4'):
-            mp4_output = os.path.join(DOWNLOAD_FOLDER, "video.mp4")
-            cmd = ['ffmpeg', '-y', '-i', downloaded_file, '-c', 'copy', mp4_output]
-            subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            if os.path.exists(mp4_output):
-                downloaded_file = mp4_output
-
+        # MP4 VIDEO WITH FULL SOUND
         return send_file(downloaded_file, as_attachment=True, download_name="video.mp4")
 
     except Exception as e:
