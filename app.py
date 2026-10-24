@@ -1,10 +1,13 @@
-import static_ffmpeg
-static_ffmpeg.add_paths()
 import os
+import re
 import glob
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import yt_dlp
+import static_ffmpeg
+
+# Cloud-la FFmpeg automatic setup
+static_ffmpeg.add_paths()
 
 app = Flask(__name__)
 CORS(app)
@@ -12,18 +15,41 @@ CORS(app)
 DOWNLOAD_FOLDER = "downloads"
 os.makedirs(DOWNLOAD_FOLDER, exist_ok=True)
 
-# 1. Quick Info Fetch API
+# Shorts URL-ah standard YouTube video link-ah convert panrom
+def clean_url(url):
+    shorts_match = re.search(r'youtube\.com/shorts/([a-zA-Z0-9_-]+)', url)
+    if shorts_match:
+        return f"https://www.youtube.com/watch?v={shorts_match.group(1)}"
+    return url
+
+# YouTube Cloud Bot Bypass Settings
+COMMON_OPTS = {
+    'quiet': True,
+    'no_warnings': True,
+    'extractor_args': {
+        'youtube': {
+            'player_client': ['ios', 'android', 'mweb']
+        }
+    }
+}
+
+@app.route('/')
+def home():
+    return "Server is Active & Ready!"
+
+# 1. Video Info API
 @app.route('/get-info', methods=['POST'])
 def get_info():
     data = request.get_json()
-    url = data.get('url')
+    raw_url = data.get('url') if data else None
 
-    if not url:
+    if not raw_url:
         return jsonify({'success': False, 'error': 'URL thevai!'}), 400
 
+    url = clean_url(raw_url)
+
     ydl_opts = {
-        'quiet': True,
-        'no_warnings': True,
+        **COMMON_OPTS,
         'skip_download': True,
     }
 
@@ -39,16 +65,18 @@ def get_info():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# 2. High-Speed Download API
+# 2. File Download API
 @app.route('/download', methods=['GET'])
 def download():
-    url = request.args.get('url')
+    raw_url = request.args.get('url')
     download_type = request.args.get('type', 'mp4')
 
-    if not url:
+    if not raw_url:
         return "URL missing", 400
 
-    # Old downloads clean panna
+    url = clean_url(raw_url)
+
+    # Clean old downloads
     for f in glob.glob(os.path.join(DOWNLOAD_FOLDER, "*")):
         try:
             os.remove(f)
@@ -57,32 +85,22 @@ def download():
 
     out_template = os.path.join(DOWNLOAD_FOLDER, "%(title).40s.%(ext)s")
 
-    # Common Speed Booster Settings
-    speed_boost_opts = {
-        'outtmpl': out_template,
-        'quiet': True,
-        'no_warnings': True,
-        'concurrent_fragment_downloads': 8,  # 8 Threads Parallel Download (Rocket Speed)
-        'buffersize': 1024 * 64,             # 64KB Buffer
-        'http_chunk_size': 10485760,         # 10MB Chunk Size
-    }
-
     if download_type == 'mp3':
-        # Fast MP3 Settings
         ydl_opts = {
-            **speed_boost_opts,
+            **COMMON_OPTS,
             'format': 'bestaudio/best',
+            'outtmpl': out_template,
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
-                'preferredquality': '128',   # Fast encoding & Crystal Clear sound
+                'preferredquality': '128',
             }],
         }
     else:
-        # Fast 720p HD MP4 Settings (Fast download + Super Clarity)
         ydl_opts = {
-            **speed_boost_opts,
+            **COMMON_OPTS,
             'format': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]/best',
+            'outtmpl': out_template,
         }
 
     try:
@@ -100,7 +118,4 @@ def download():
 
 
 if __name__ == '__main__':
-    print("--------------------------------------------------")
-    print("High-Speed Backend Running: http://127.0.0.1:5000")
-    print("--------------------------------------------------")
     app.run(port=5000, debug=True)
